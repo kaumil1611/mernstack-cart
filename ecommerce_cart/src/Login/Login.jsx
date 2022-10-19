@@ -1,7 +1,10 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Form, Button } from "react-bootstrap";
 import { useFormik } from "formik";
 import { signInSchemas } from "../schemas";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { UserContextAPI } from "../Nav/NavBar";
 
 const initialValues = {
   name: "",
@@ -9,13 +12,45 @@ const initialValues = {
   password: "",
 };
 
+const headers = {
+  "Content-Type": "application/json",
+};
+
 const Login = () => {
+  const { state, dispatch } = useContext(UserContextAPI);
+
+  const navigate = useNavigate();
+
   const { values, errors, touched, handleBlur, handleChange, handleSubmit } =
     useFormik({
       initialValues: initialValues,
       validationSchema: signInSchemas,
       onSubmit: (value) => {
-        console.log("values", value);
+        // console.log("values", value);
+        const result = JSON.stringify({
+          name: value.name,
+          email: value.email,
+          password: value.password,
+        });
+        // console.log(result);
+        axios
+          .post("/login", result, {
+            headers: headers,
+          })
+          .then((res) => {
+            // console.log("response", res);
+            if (res.status === 201) {
+              dispatch({ type: "USER", payload: true });
+              navigate("/");
+            } else {
+              alert("invalid login");
+            }
+          })
+          .catch((err) => {
+            if (err.response.status === 401 || err.response.status === 404) {
+              alert("invalid login");
+            }
+          });
       },
     });
 
